@@ -1,172 +1,18 @@
-#include "raylib.h"
-
-float PercentageOf(float Percentage, float Value)
-{
-    return (Value * Percentage) / 100;
-}
+﻿#include "Helper.h"
 
 int main()
 {
-    const int Width = 800;
-    const int Height = 450;
-    InitWindow(Width, Height, "Tinkerer");
-    SetWindowState(FLAG_WINDOW_UNDECORATED);
-
-    while (!WindowShouldClose())
-    {
-        BeginDrawing();
-
-        ClearBackground(Color{ 41, 46, 61, 255 });
-
-        Rectangle Foreground = { 0, 0, Width, PercentageOf(8, Height) }; // pos then size
-        bool MouseOverForeground = CheckCollisionPointRec(GetMousePosition(), Foreground);
-        bool ClickForeground = MouseOverForeground && IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT);
-        DrawRectangleRec(Foreground, Color{ 49, 55, 73, 255 });
-
-        Rectangle QuitButtonBG = { PercentageOf(95.5, Width), 0, PercentageOf(8, Height), PercentageOf(8, Height) };
-        bool MouseOverQuit = CheckCollisionPointRec(GetMousePosition(), QuitButtonBG);
-        bool ClickedQuit = MouseOverQuit && IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT);
-        DrawRectangleRec(QuitButtonBG, MouseOverQuit ? Color{ 255 , 46, 61, 255 } : Color{ 49, 55, 73, 255 });
-        Vector2 TextSize = MeasureTextEx(GetFontDefault(), "x", 40, 1.0f);
-        float TextX = QuitButtonBG.x + (QuitButtonBG.width - TextSize.x) / 2;
-        float TextY = QuitButtonBG.y + (QuitButtonBG.height - TextSize.y) / 2;
-        DrawText("x", TextX, TextY, 40, WHITE);
-
-        if (ClickedQuit)
-            break;
-
-        EndDrawing();
-    }
-
-    CloseWindow();
-
-    return 0;
-}
-#include "raylib.h"
-#include <string>
-#include <vector>
-#ifdef NDEBUG
-#else
-#define DBG
-#include <iostream>
-#endif
-
-float PercentageOf(float Percentage, float Value)
-{
-    return (Value * Percentage) / 100;
-}
-
-char KeyToChar(int Key)
-{
-    switch (Key)
-    {
-    case KEY_A:
-        return 'a';
-        break;
-    case KEY_B:
-        return 'b';
-        break;
-    case KEY_C:
-        return 'c';
-        break;
-    case KEY_D:
-        return 'd';
-        break;
-    case KEY_E:
-        return 'e';
-        break;
-    case KEY_F:
-        return 'f';
-        break;
-    case KEY_G:
-        return 'g';
-        break;
-    case KEY_H:
-        return 'h';
-        break;
-    case KEY_I:
-        return 'i';
-        break;
-    case KEY_J:
-        return 'j';
-        break;
-    case KEY_K:
-        return 'k';
-        break;
-    case KEY_L:
-        return 'l';
-        break;
-    case KEY_M:
-        return 'm';
-        break;
-    case KEY_N:
-        return 'n';
-        break;
-    case KEY_O:
-        return 'o';
-        break;
-    case KEY_P:
-        return 'p';
-        break;
-    case KEY_Q:
-        return 'q';
-        break;
-    case KEY_R:
-        return 'r';
-        break;
-    case KEY_S:
-        return 's';
-        break;
-    case KEY_T:
-        return 't';
-        break;
-    case KEY_U:
-        return 'u';
-        break;
-    case KEY_V:
-        return 'v';
-        break;
-    case KEY_W:
-        return 'w';
-        break;
-    case KEY_X:
-        return 'x';
-        break;
-    case KEY_Y:
-        return 'y';
-        break;
-    case KEY_Z:
-        return 'z';
-        break;
-    case KEY_SPACE:
-        return ' ';
-        break;
-    default:
-        return 'a';
-    }
-}
-
-int GetAnyKeyDown()
-{
-    for (int Key = KEY_SPACE; Key < 350; Key++)  // Assuming 350 is the upper limit for key codes
-    {
-        if (IsKeyReleased(Key))
-        {
-            return Key;
-            break;
-        }
-    }
-
-    return 0;
-}
-
-int main()
-{
-    const int Width = 800;
-    const int Height = 450;
+    int Width = 800;
+    int Height = 450;
     bool WordWrap = true;
+    bool IsMaximized = false;
+    bool IsDraggingTitlebar = false;
+    Vector2 DragOffset = { 0, 0 };
+
     InitWindow(Width, Height, "Tinkerer");
     SetWindowState(FLAG_WINDOW_UNDECORATED);
+    Vector2 OldWindowPosition = GetWindowPosition();
+    SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 
     std::vector<std::string> Lines = { "" };
     Vector2 CursorPosition = { 0, 0 };
@@ -175,28 +21,62 @@ int main()
     {
         BeginDrawing();
         ClearBackground(Color{ 41, 46, 61, 255 });
+        int FontSize = static_cast<int>(40 * (Height / 450.0f)); // calculate base font size
 
-        Rectangle Foreground = { 0, 0, Width, PercentageOf(8, Height) }; // pos then size
+        Rectangle Foreground = { 0, 0, Width, PercentageOf(8, Height) };
         bool MouseOverForeground = CheckCollisionPointRec(GetMousePosition(), Foreground);
-        bool ClickForeground = MouseOverForeground && IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT);
+        bool ClickedForeground = MouseOverForeground && IsMouseButtonPressed(MouseButton::MOUSE_BUTTON_LEFT);
+        bool ReleasedForeground = IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT);
         DrawRectangleRec(Foreground, Color{ 49, 55, 73, 255 });
 
         Rectangle QuitButtonBG = { PercentageOf(95.5, Width), 0, PercentageOf(8, Height), PercentageOf(8, Height) };
         bool MouseOverQuit = CheckCollisionPointRec(GetMousePosition(), QuitButtonBG);
         bool ClickedQuit = MouseOverQuit && IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT);
         DrawRectangleRec(QuitButtonBG, MouseOverQuit ? Color{ 255 , 46, 61, 255 } : Color{ 49, 55, 73, 255 });
-        Vector2 TextSize = MeasureTextEx(GetFontDefault(), "x", 40, 1.0f);
-        float TextX = QuitButtonBG.x + (QuitButtonBG.width - TextSize.x) / 2;
-        float TextY = QuitButtonBG.y + (QuitButtonBG.height - TextSize.y) / 2;
-        DrawText("x", TextX, TextY, 40, WHITE);
+        int TextSize = MeasureText("x", 40);
+        float TextX = QuitButtonBG.x + (QuitButtonBG.width - TextSize) / 2;
+        float TextY = QuitButtonBG.y + (QuitButtonBG.height - FontSize) / 2;
+        DrawText("x", TextX, TextY, FontSize, WHITE);
 
-        if (IsWindowFocused() && !ClickForeground && !ClickedQuit) // text box is focused
+        Rectangle MinMaxButtonBG = { PercentageOf(90.5, Width), 0, PercentageOf(8, Height), PercentageOf(8, Height) };
+        bool MouseOverMinMax = CheckCollisionPointRec(GetMousePosition(), MinMaxButtonBG);
+        bool ClickedMinMax = MouseOverMinMax && IsMouseButtonReleased(MouseButton::MOUSE_BUTTON_LEFT);
+        if (IsMaximized)
+            DrawRectangleRec(MinMaxButtonBG, MouseOverMinMax ? Color{ 200 , 200, 99, 255 } : Color{ 49, 55, 73, 255 });
+        else
+            DrawRectangleRec(MinMaxButtonBG, MouseOverMinMax ? Color{ 76 , 255, 99, 255 } : Color{ 49, 55, 73, 255 });
+        TextSize = MeasureText("-", 40);
+        TextX = MinMaxButtonBG.x + (MinMaxButtonBG.width - TextSize) / 2; // centre in button
+        TextY = MinMaxButtonBG.y + (MinMaxButtonBG.height - FontSize) / 2; // centre in button
+        DrawText(IsMaximized ? "-" : "+", TextX, TextY, FontSize, WHITE);
+
+        if (ClickedForeground && !IsMaximized)
+        {
+            IsDraggingTitlebar = true;
+            DragOffset = GetMousePosition();
+            Vector2 WindowPos = GetWindowPosition();
+            DragOffset.x -= WindowPos.x;
+            DragOffset.y -= WindowPos.y;
+        }
+
+        if (ReleasedForeground)
+            IsDraggingTitlebar = false;
+
+        if (IsDraggingTitlebar)
+        {
+            Vector2 MousePosition = GetMousePosition();
+            SetWindowPosition(MousePosition.x - DragOffset.x, MousePosition.y - DragOffset.y);
+        }
+
+        if (IsWindowFocused() && !ClickedForeground && !ClickedQuit && !ClickedMinMax) // text box is focused
         {
             std::string Characters = Lines[CursorPosition.y];
             int KeyDown = GetAnyKeyDown();
             if (KeyDown != 0)
             {
-                if (KeyDown == KEY_BACKSPACE)
+                switch (KeyDown)
+                {
+                case KEY_BACKSPACE:
                 {
                     if (CursorPosition.x == 1 && CursorPosition.y != 0)
                     {
@@ -210,23 +90,24 @@ int main()
                         CursorPosition.x = Lines[CursorPosition.y].size();
                         Characters.pop_back();
                     }
+
+                    break;
                 }
-                else if (KeyDown == KEY_ENTER)
+                case KEY_ENTER:
                 {
                     CursorPosition.y += 1;
                     if (Lines.size() <= CursorPosition.y)
                         Lines.push_back("");
                     Characters = Lines[CursorPosition.y];
+
+                    break;
                 }
-                else
+                default:
                 {
                     char NewChar = KeyToChar(KeyDown);
                     if (WordWrap)
                     {
                         int TextWidth = MeasureText((Characters + NewChar).c_str(), 40);
-#ifdef DBG
-                        std::cout << "width: " << std::to_string(TextWidth) << "\nCharacters: " << Characters << std::endl;
-#endif
                         if (TextWidth > Width)
                         {
                             CursorPosition.y += 1;
@@ -236,24 +117,48 @@ int main()
                         }
                     }
 
-
                     Characters = Characters + KeyToChar(KeyDown);
                     CursorPosition.x += 1;
+
+                    break;
+                }
                 }
             }
             Lines[CursorPosition.y] = Characters; // update line
         }
 
         for (int Index = 0; Index < Lines.size(); Index++)
-            DrawText(Lines[Index].c_str(), 1, PercentageOf(10, Height) * (Index + 1), 40, WHITE);
+            DrawText(Lines[Index].c_str(), 1, PercentageOf(10, Height) * (Index + 1), FontSize, WHITE);
 
         if (ClickedQuit)
             break;
+        if (ClickedMinMax)
+        {
+            IsMaximized = !IsMaximized;
+
+            if (IsMaximized)
+            {
+                OldWindowPosition = GetWindowPosition();
+
+                Width = GetMonitorWidth(GetCurrentMonitor());
+                Height = GetMonitorHeight(GetCurrentMonitor());
+
+                SetWindowSize(Width, Height);
+                SetWindowPosition(0, 0);
+            }
+            else
+            {
+                Width = 800;
+                Height = 450;
+
+                SetWindowSize(Width, Height);
+                SetWindowPosition(OldWindowPosition.x, OldWindowPosition.y);
+            }
+        }
 
         EndDrawing();
     }
 
     CloseWindow();
-
     return 0;
 }
