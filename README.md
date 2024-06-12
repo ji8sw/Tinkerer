@@ -2,7 +2,7 @@
 
 ## To-Do:
 - [x] Basic Text Input
-- [ ] Advanced Text Input (0-9, !?)
+- [ ] Advanced Text Input (0-9, !?) [!]
 - [ ] Save Files
 - [ ] Load Files
 - [ ] Visual Cursor
